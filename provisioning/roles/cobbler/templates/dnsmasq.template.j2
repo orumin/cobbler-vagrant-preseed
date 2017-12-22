@@ -1,0 +1,21 @@
+# Cobbler generated configuration file for dnsmasq
+# $date 
+#
+read-ethers
+addn-hosts = /var/lib/cobbler/cobbler_hosts
+
+dhcp-range={{cobbler.dhcp_start}},{{cobbler.dhcp_end}}
+dhcp-option=3,$next_server
+dhcp-lease-max=1000
+dhcp-authoritative
+dhcp-boot={{pxetarget}}
+dhcp-boot=net:normalarch,{{pxetarget}}
+dhcp-boot=net:ia64,$elilo
+
+{% for node in cluster_nodes %}
+dhcp-host={{ node.hwaddr }},{{ node.ipaddr }} 
+{% endfor %}
+
+
+$insert_cobbler_system_definitions
+

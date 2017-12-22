@@ -1,0 +1,16 @@
+---
+- name: install packages
+  yum: name={{item}} update_cache=yes state=latest
+  with_items:
+    - epel-release
+    - zsh
+    - git
+    - git-core
+    - ansible
+    - ipmitool
+
+- name: disable selinux
+  selinux: state=disabled
+
+- name: disable firewalld
+  service: name=firewalld enabled=no state=stopped

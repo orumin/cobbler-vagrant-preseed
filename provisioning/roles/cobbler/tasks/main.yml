@@ -1,0 +1,122 @@
+---
+- name: install packages
+  yum: name={{item}} update_cache=yes state=latest
+  with_items:
+    - cobbler
+    - cobbler-web
+    - bind
+    - dhcp
+    - xinetd
+    - pykickstart
+    - fence-agents
+
+- name: upgrade packages
+  yum: name=* update_cache=yes state=latest
+
+- name: service pre-setting
+  service: name={{item}} state=stopped enabled=yes
+  with_items:
+        - cobblerd
+        - httpd
+        - named
+        - dhcpd
+        - xinetd
+        - rsyncd
+
+- name: config settings
+  template: >
+        src=settings.j2
+        dest=/etc/cobbler/settings
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: config module.conf
+  template: >
+        src=modules.conf.j2
+        dest=/etc/cobbler/modules.conf
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: config dhcpd
+  template: >
+        src=dhcp.template.j2
+        dest=/etc/cobbler/dhcp.template
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: config cobbler preseed file
+  template: >
+        src=preseed.seed.j2
+        dest=/var/lib/cobbler/kickstarts/Ubuntu16.04-x86_64.seed
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: config cobbler snippets file
+  template: >
+        src=late_apt_repo_config.j2
+        dest=/var/lib/cobbler/snippets/late_apt_repo_config
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: setup cobbler inventory plugin
+  template: >
+        src=cobbler.ini.j2
+        dest=/etc/ansible/cobbler.ini
+        owner=root group=root mode=0644
+  notify: restart cobbler
+
+- name: start service 
+  service: name={{item}} state=started enabled=yes
+  with_items:
+        - cobblerd
+        - httpd
+        - xinetd
+        - rsyncd
+
+- name: install cobbler loader
+  command: /usr/bin/cobbler get-loaders
+  register: cmd_result
+  ignore_errors: True
+  become: yes
+  tags: debug
+
+- name: debug
+  debug: msg="{{cmd_result.stdout_lines}}"
+  when: cmd_result|failed
+  tags: debug
+
+- name: sync cobbler
+  command: cobbler sync
+  changed_when: false
+
+- name: get OS images
+  get_url: >
+        url="{{item.url}}{{ item.file }}" 
+        dest="/home/vagrant/{{ item.file }}"
+        sha256sum="{{ item.csum }}"
+  with_items:
+     - { url:  "http://ftp.iij.ad.jp/pub/linux/ubuntu/releases/16.04/",
+         file: "ubuntu-16.04.3-server-amd64.iso",
+         csum: "a06cd926f5855d4f21fb4bc9978a35312f815fbda0d0ef7fdc846861f4fc4600"}
+  register: download
+
+- name: mount OS image
+  mount: >
+        name=/mnt
+        src="/home/vagrant/{{ item.file }}"
+        fstype=iso9660
+        opts=loop
+        state=mounted
+  with_items:
+     - file: "ubuntu-16.04.3-server-amd64.iso"
+
+- name: import OS image to cobbler
+  command: cobbler import --path=/mnt --name=Ubuntu16.04
+
+- name: edit cobbler profile
+  command: cobbler profile edit --name=Ubuntu16.04-x86_64 --kickstart=/var/lib/cobbler/kickstarts/Ubuntu16.04-x86_64.seed
+  notify: restart cobbler
+
+- name: add system to cobbler
+  command: cobbler system add --name default --profile Ubuntu16.04-x86_64 --gateway={{ cobbler.router }}
+  notify: restart cobbler

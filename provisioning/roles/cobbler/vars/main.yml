@@ -1,0 +1,22 @@
+---
+pxetarget: grubx64.efi
+#server: 192.168.151.3
+server: 192.168.33.11
+cobbler:
+        manage_dhcp: 1
+        manage_dns: 1
+        next_server: "{{server}}"
+        server: "{{server}}"
+        # default_passwd_crypted is "test"
+        default_passwd_crypted: $1$8aNtabj7$aiLdRTXUpK/bCbWdZLUiX1
+        subnet: 192.168.151.0
+        router: 192.168.151.1
+        dhcp_start: 192.168.151.8
+        dhcp_end: 192.168.151.254
+        dns_module: manage_bind
+        dhcp_module: manage_isc
+
+cluster_nodes:
+  - { name: test00, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.17 }
+  - { name: test01, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.18 }
+  - { name: test02, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.19 }

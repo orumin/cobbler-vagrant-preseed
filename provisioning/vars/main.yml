@@ -1,0 +1,11 @@
+---
+cluster_nodes:
+  - { name: test01, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.17 }
+  - { name: test02, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.18 }
+  - { name: test03, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.151.19 }
+
+
+bmc_nodes:
+  - { name: test01, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.148.17 }
+  - { name: test02, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.148.18 }
+  - { name: test03, hwaddr: "XX:XX:XX:XX:XX:XX", ipaddr:  192.168.148.19 }
